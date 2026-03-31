@@ -55,3 +55,13 @@ failure*.log
 failure*.txt
 *.tmp
 temp_*/
+
+# --- Local Utility Scripts (Excluded from Repo) ---
+check_crewai_types.py
+check_schema.py
+inspect_tool_type.py
+list_models.py
+ping_google.py
+populate_db.py
+runner.py
+deep_research_test.py
