@@ -1,219 +1,220 @@
 import streamlit as st
-import asyncio
 import os
 import sys
 import uuid
 from typing import List, Dict, Any
 from dotenv import load_dotenv
+from streamlit_option_menu import option_menu
 
 # Add backend/src to sys.path for local imports
 sys.path.append(os.path.join(os.getcwd(), "backend", "src"))
 
-# Import our custom components
-from shared.supabase_client import save_chat_history, get_chat_history
-from retrieval_graph.graph import graph
-from langchain_core.messages import HumanMessage, AIMessage
+# Lazy imports for performance
+from shared.supabase_client import (
+    save_chat_history, 
+    get_chat_history, 
+    get_user_threads
+)
 
 # Load environment variables
 load_dotenv()
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Multi-Model AI Research Assistant",
-    page_icon="🔬",
+    page_title="Streamlit AI Assistant",
+    page_icon="⚛️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- Premium Aesthetics (CSS) ---
+# --- Corporate Minimalist CSS (Final Calibration) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Source Sans Pro', sans-serif;
+        background-color: white !important;
+        color: #31333f;
     }
     
-    .main {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #f8fafc;
-    }
-    
-    .stChatFloatingInputContainer {
-        background-color: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(10px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
+    section.main > div {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-top: 50px;
     }
     
     .stChatMessage {
-        background-color: rgba(51, 65, 85, 0.5);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        margin-bottom: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        background-color: transparent !important;
+        border: none !important;
+        margin-bottom: 0px !important;
+    }
+
+    /* Starter Bubbles (Official Look) */
+    .starter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-start;
+        margin-top: 20px;
+    }
+
+    .stButton > button {
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: white !important;
+        color: #475569 !important;
+        font-size: 0.85rem !important;
+        padding: 5px 12px !important;
+    }
+
+    .stChatInput {
+        border-radius: 15px !important;
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
     }
     
-    .sidebar .sidebar-content {
-        background-color: #1e293b;
+    .floating-badges {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: right;
     }
     
-    h1, h2, h3 {
-        color: #60a5fa !important;
-        font-weight: 600;
-    }
-    
-    .model-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    
-    .tier-badge {
-        font-size: 0.7rem;
+    .badge {
+        font-size: 0.6rem;
         padding: 2px 8px;
-        border-radius: 10px;
-        text-transform: uppercase;
-        font-weight: bold;
+        border-radius: 5px;
+        background: #f8fafc;
+        color: #94a3b8;
+        border: 1px solid #f1f5f9;
+        font-weight: 500;
     }
-    
-    .tier-core { background-color: #3b82f6; color: white; }
-    .tier-fast { background-color: #10b981; color: white; }
-    .tier-grounding { background-color: #f59e0b; color: white; }
-    .tier-research { background-color: #8b5cf6; color: white; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Session State Initialization ---
+# --- Session State ---
+if "user_id" not in st.session_state:
+    st.session_state.user_id = "kaustubhthorat07"
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "thread_id" not in st.session_state:
-    st.session_state.thread_id = str(uuid.uuid4())
-
-if "user_id" not in st.session_state:
-    st.session_state.user_id = "default_user" # In a real app, this would be from Auth
-
-# Load history from Supabase on start
-if not st.session_state.messages:
-    history = get_chat_history(st.session_state.user_id)
-    if history:
-        for msg in history:
-            role = "user" if msg["role"] == "user" else "assistant"
-            st.session_state.messages.append({"role": role, "content": msg["message"]})
-
-# --- Sidebar ---
+# --- Sidebar (Gemini Pro Layout) ---
 with st.sidebar:
-    st.title("🔬 Research Hub")
-    st.markdown("---")
+    st.markdown("<div style='padding: 20px 0 10px 0;'><h2 style='font-size: 1.3rem; font-weight: 600;'>Research Hub</h2></div>", unsafe_allow_html=True)
     
-    st.subheader("Model Tiers")
+    if st.button("+ New Research", use_container_width=True):
+        st.session_state.thread_id = str(uuid.uuid4())
+        st.session_state.messages = []
+        st.rerun()
     
-    # Display the LLM Model tiers as per the user's image
+    st.markdown("<div style='color: #94a3b8; font-size: 0.75rem; margin: 20px 0 10px 0; text-transform: uppercase; font-weight: 600;'>Recent Research</div>", unsafe_allow_html=True)
+    
+    try:
+        user_threads = get_user_threads(st.session_state.user_id)
+        if user_threads:
+            titles = [t["title"] for t in user_threads]
+            ids = [t["thread_id"] for t in user_threads]
+            current_idx = ids.index(st.session_state.thread_id) if st.session_state.thread_id in ids else 0
+            
+            selected = option_menu(
+                None, titles, 
+                icons=['chat-left'] * len(titles), 
+                menu_icon="cast", 
+                default_index=current_idx,
+                styles={
+                    "container": {"padding": "0!important", "background-color": "transparent"},
+                    "icon": {"color": "#64748b", "font-size": "14px"}, 
+                    "nav-link": {"font-size": "14px", "text-align": "left", "margin":"0px", "color": "#475569", "--hover-color": "#f8fafc"},
+                    "nav-link-selected": {"background-color": "#eff6ff", "color": "#2563eb", "font-weight": "500"},
+                }
+            )
+            
+            selected_id = ids[titles.index(selected)]
+            if selected_id != st.session_state.thread_id:
+                st.session_state.thread_id = selected_id
+                st.session_state.messages = []
+                st.rerun()
+    except Exception:
+        pass
+
+# --- History Sync Clean-up ---
+if not st.session_state.messages:
+    raw_history = get_chat_history(st.session_state.user_id, st.session_state.thread_id)
+    if raw_history:
+        st.session_state.messages = [{"role": m["role"], "content": m["message"]} for m in raw_history]
+
+# --- Display Content ---
+if not st.session_state.messages:
     st.markdown("""
-    <div class="model-card">
-        <span class="tier-badge tier-core">Core</span>
-        <div style="font-size: 0.9rem; margin-top: 5px;"><b>Llama 3.3 70B</b></div>
-        <div style="font-size: 0.7rem; color: #94a3b8;">Provider: Groq | Purpose: Reasoning</div>
-    </div>
-    <div class="model-card">
-        <span class="tier-badge tier-fast">Fast</span>
-        <div style="font-size: 0.9rem; margin-top: 5px;"><b>Llama 3.1 8B</b></div>
-        <div style="font-size: 0.7rem; color: #94a3b8;">Provider: Groq | Purpose: Summary</div>
-    </div>
-    <div class="model-card">
-        <span class="tier-badge tier-grounding">Grounding</span>
-        <div style="font-size: 0.9rem; margin-top: 5px;"><b>Gemini 2.5 Flash Lite</b></div>
-        <div style="font-size: 0.7rem; color: #94a3b8;">Provider: Google | Purpose: Fact-checking</div>
-    </div>
-    <div class="model-card">
-        <span class="tier-badge tier-research">Research</span>
-        <div style="font-size: 0.9rem; margin-top: 5px;"><b>Gemini 3.1 Flash Lite</b></div>
-        <div style="font-size: 0.7rem; color: #94a3b8;">Provider: Google | Purpose: Deep Intelligence</div>
+    <div style="text-align: center; margin-bottom: 40px;">
+        <div style="font-size: 60px; margin-bottom: 10px;">⚛️</div>
+        <h1 style="font-size: 3rem; font-weight: 700;">Streamlit AI assistant</h1>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---")
-    st.subheader("Vector Database")
-    st.info("🟢 ChromaDB Active")
+    col1, col2, col3 = st.columns([1,1,1.2])
+    with col1:
+        if st.button("🛡️ What is Streamlit?", key="p1", use_container_width=True): st.session_state.p = "What is Streamlit?"
+    with col2:
+        if st.button("💾 Session state", key="p2", use_container_width=True): st.session_state.p = "Help me understand session state"
+    with col3:
+        if st.button("📈 Interactive charts", key="p3", use_container_width=True): st.session_state.p = "How do I make an interactive chart?"
     
-    st.subheader("Storage")
-    st.success("🟢 Supabase Connected")
+    col4, col5 = st.columns([1, 1.2])
+    with col4:
+        if st.button("👕 Customize app", key="p4", use_container_width=True): st.session_state.p = "How do I customize my app?"
+    with col5:
+        if st.button("📦 Deploying at work", key="p5", use_container_width=True): st.session_state.p = "Deploying an app at work"
     
-    if st.button("Clear Chat History", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.thread_id = str(uuid.uuid4())
-        st.rerun()
+    st.markdown("<br><div style='text-align: left; color: #cbd5e1; font-size: 0.75rem;'>⚖️ Legal disclaimer</div>", unsafe_allow_html=True)
+    if (ptr := st.session_state.get("p")):
+        prompt = ptr
+        del st.session_state["p"]
+    else:
+        prompt = st.chat_input("Ask a question...")
+else:
+    prompt = st.chat_input("Ask a question...")
 
-# --- Main Interface ---
-st.title("Multi-Model Research Assistant")
-st.caption("Powered by LangGraph, ChromaDB, and Supabase")
+# Message Loop
+for msg in st.session_state.messages:
+    avatar = "👤" if msg["role"] == "user" else "⚛️"
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(msg["content"])
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# React to user input
-if prompt := st.chat_input("Ask a research question..."):
-    # Display user message in chat message container
-    st.chat_message("user").markdown(prompt)
-    # Add user message to session state
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Save to Supabase
-    save_chat_history(st.session_state.user_id, prompt, "user")
-
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
+if prompt:
+    # Dedup check
+    if not (st.session_state.messages and st.session_state.messages[-1]["content"] == prompt):
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        save_chat_history(st.session_state.user_id, st.session_state.thread_id, prompt, "user")
         
-        # Prepare graph input
-        inputs = {"messages": [HumanMessage(content=prompt)]}
-        config = {
-            "configurable": {
-                "thread_id": st.session_state.thread_id,
-                "retriever_provider": "chroma"
-            }
-        }
-        
-        # Invoke agent
-        async def run_agent():
-            nonlocal full_response
+        with st.chat_message("assistant", avatar="⚛️"):
+            status = st.status("🌌 Researching...", expanded=False)
+            placeholder = st.empty()
             try:
-                # We use stream for better UX
-                async for event in graph.astream(inputs, config=config, stream_mode="values"):
-                    if "messages" in event:
-                        last_message = event["messages"][-1]
-                        if isinstance(last_message, AIMessage):
-                            full_response = last_message.content
-                            message_placeholder.markdown(full_response + "▌")
-                
-                message_placeholder.markdown(full_response)
-                return full_response
+                from research_crew import create_research_crew
+                crew = create_research_crew(prompt)
+                res = str(crew.kickoff())
+                placeholder.markdown(res)
+                st.session_state.messages.append({"role": "assistant", "content": res})
+                save_chat_history(st.session_state.user_id, st.session_state.thread_id, res, "assistant")
+                status.update(label="✅ Complete", state="complete")
             except Exception as e:
-                st.error(f"Error invoking agent: {e}")
-                return "I'm sorry, I encountered an error while processing your request."
+                st.error(f"Error: {e}")
+                status.update(label="❌ Failed", state="error")
 
-        # Run the async agent
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        full_response = loop.run_until_complete(run_agent())
-        
-        # Add assistant response to session state
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-        
-        # Save to Supabase
-        save_chat_history(st.session_state.user_id, full_response, "assistant")
-
-# --- Footer ---
-st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: #94a3b8; font-size: 0.8rem;'>"
-    "Built with Premium AI Research Stack | 2026"
-    "</div>", 
-    unsafe_allow_html=True
-)
+# Floating Badges
+st.markdown("""
+<div class="floating-badges">
+    <div class="badge">Model: Llama 3.3/Gemini 2.0</div>
+    <div class="badge">Cloud: Active</div>
+</div>
+""", unsafe_allow_html=True)

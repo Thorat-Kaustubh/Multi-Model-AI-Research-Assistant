@@ -29,6 +29,14 @@ def make_text_encoder(model: str) -> Embeddings:
             from langchain_cohere import CohereEmbeddings
 
             return CohereEmbeddings(model=model)  # type: ignore
+        case "huggingface":
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+
+            return HuggingFaceEmbeddings(model_name=model)
+        case "google":
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+            return GoogleGenerativeAIEmbeddings(model=model)
         case _:
             raise ValueError(f"Unsupported embedding provider: {provider}")
 
@@ -97,11 +105,23 @@ def make_chroma_retriever(
 ) -> Generator[VectorStoreRetriever, None, None]:
     """Configure this agent to connect to a specific ChromaDB index."""
     from langchain_chroma import Chroma
+    import chromadb
+
+    host = os.getenv("CHROMA_HOST", "api.trychroma.com")
+    if not host.startswith("http"):
+        host = f"https://{host}"
+
+    client = chromadb.HttpClient(
+        host=host,
+        headers={"X-Chroma-Token": str(os.getenv('CHROMA_API_KEY'))},
+        tenant=os.getenv("CHROMA_TENANT", "default_tenant"),
+        database=os.getenv("CHROMA_DATABASE", "default_database")
+    )
 
     vstore = Chroma(
-        collection_name="research_assistant",
+        client=client,
+        collection_name=getattr(configuration, "collection_name", "Research"),
         embedding_function=embedding_model,
-        persist_directory="./chroma_db",
     )
     yield vstore.as_retriever(search_kwargs=configuration.search_kwargs)
 

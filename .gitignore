@@ -41,3 +41,17 @@ chroma_db/
 # --- Misc ---
 DS_Store
 tests_bak/
+
+# --- Tests & Data Artifacts ---
+test_*.py
+*_test.py
+test*.txt
+*test.json
+*results.json
+*audit.json
+*.log
+failure_log/
+failure*.log
+failure*.txt
+*.tmp
+temp_*/
