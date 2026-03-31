@@ -20,6 +20,12 @@ dependencies = [
     "msgspec>=0.18.6",
     "langchain-mongodb>=0.1.9",
     "langchain-cohere>=0.2.4",
+    "streamlit>=1.38.0",
+    "supabase>=2.5.0",
+    "chromadb>=0.5.5",
+    "langchain-chroma>=0.1.2",
+    "langchain-google-genai>=1.0.10",
+    "langchain-groq>=0.1.9",
 ]
 
 [project.optional-dependencies]

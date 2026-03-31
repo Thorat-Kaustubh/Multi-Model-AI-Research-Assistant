@@ -36,7 +36,7 @@ async def generate_queries(
         queries: list[str]
 
     configuration = AgentConfiguration.from_runnable_config(config)
-    model = load_chat_model(configuration.query_model).with_structured_output(Response)
+    model = load_chat_model(configuration.research_model).with_structured_output(Response)
     messages = [
         {"role": "system", "content": configuration.generate_queries_system_prompt},
         {"role": "human", "content": state.question},

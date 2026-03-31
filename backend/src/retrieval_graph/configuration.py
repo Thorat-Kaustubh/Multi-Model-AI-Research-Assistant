@@ -14,18 +14,24 @@ class AgentConfiguration(BaseConfiguration):
     """The configuration for the agent."""
 
     # models
-
     query_model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="anthropic/claude-3-haiku-20240307",
+        default="groq/llama-3.1-8b-instant",
         metadata={
-            "description": "The language model used for processing and refining queries. Should be in the form: provider/model-name."
+            "description": "The language model used for processing and refining queries. (Fast Tier)"
         },
     )
 
     response_model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="anthropic/claude-3-5-sonnet-20240620",
+        default="groq/llama-3.3-70b-versatile",
         metadata={
-            "description": "The language model used for generating responses. Should be in the form: provider/model-name."
+            "description": "The language model used for generating responses. (Core Tier)"
+        },
+    )
+
+    research_model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
+        default="google/gemini-3.1-flash-lite-preview",
+        metadata={
+            "description": "The language model used for research tasks. (Research Tier)"
         },
     )
 

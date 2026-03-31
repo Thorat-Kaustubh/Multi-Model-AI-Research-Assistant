@@ -27,13 +27,33 @@ class BaseConfiguration:
     )
 
     retriever_provider: Annotated[
-        Literal["elastic-local", "elastic", "pinecone", "mongodb"],
+        Literal["elastic-local", "elastic", "pinecone", "mongodb", "chroma"],
         {"__template_metadata__": {"kind": "retriever"}},
     ] = field(
-        default="elastic-local",
+        default="chroma",
         metadata={
-            "description": "The vector store provider to use for retrieval. Options are 'elastic', 'pinecone', or 'mongodb'."
+            "description": "The vector store provider to use for retrieval. Options are 'elastic', 'pinecone', 'mongodb', or 'chroma'."
         },
+    )
+
+    core_model: str = field(
+        default="groq/llama-3.3-70b-versatile",
+        metadata={"description": "The core intelligence model (Groq Llama 3.3)."},
+    )
+
+    fast_model: str = field(
+        default="groq/llama-3.1-8b-instant",
+        metadata={"description": "The fast synthesis model (Groq Llama 3.1)."},
+    )
+
+    grounding_model: str = field(
+        default="google/gemini-2.5-flash-lite",
+        metadata={"description": "The grounding and fact-checking model (Google Gemini)."},
+    )
+
+    research_model: str = field(
+        default="google/gemini-3.1-flash-lite-preview",
+        metadata={"description": "The deep research model (Google Gemini)."},
     )
 
     search_kwargs: dict[str, Any] = field(
