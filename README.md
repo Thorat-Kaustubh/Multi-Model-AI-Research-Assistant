@@ -22,7 +22,8 @@ An advanced agentic research intelligence platform that leverages a multi-model 
 *   **Core Reasoning (Tier 1):** `Llama-3.3-70B` (via **Groq**) - High-precision analysis and synthesis.
 *   **Research Intelligence (Tier 2):** `Gemini-1.5-Flash` (via **Google AI**) - Deep research and context retrieval.
 *   **Grounding & Verification:** `Gemini-2.0-Flash-Exp` - FACT-checking and hallucination prevention.
-*   **Compression & Summary:** `Llama-3.1-8B` - Highspeed task summarization and token optimization.
+*   **Compression & Summary:** `Llama-3.1-8B` - High-speed task summarization and token optimization.
+*   **Embedding Layer:** `all-MiniLM-L6-v2` (via **HuggingFace**) - Performant local semantic indexing.
 
 ### **🏗️ Infrastructure & Search**
 *   **Vector Database:** [ChromaDB](https://www.trychroma.com/) (Local persistent storage for RAG).
